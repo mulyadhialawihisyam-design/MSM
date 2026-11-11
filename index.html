@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="id" style="background:#070D1C;color-scheme:dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A1226">
+<title>MSM - Mulya System Monitoring</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+/* ==================== DESIGN TOKENS (satu sumber warna untuk seluruh MSM) ==================== */
+:root{
+  --bg:#070D1C;        /* deep navy */
+  --bar:#0A1226;       /* sidebar & navbar */
+  --card:#101A30;      /* elevated slate */
+  --card-hi:#14213C;
+  --line:#1B2742;      /* border subtle */
+  --blue:#2F7DFF; --cyan:#22D3EE; --teal:#2DD4BF;
+  --ok:#10B981; --warn:#F59E0B; --err:#F87171;
+  --tx:#E8EEF9; --mut:#8A99B5; --dim:#5D6C89;
+  --r:14px; --r-sm:10px;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);overflow:hidden}
+body{font-family:'Inter',system-ui,sans-serif;color:var(--tx);-webkit-font-smoothing:antialiased}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:#1E2B48;border-radius:8px}
+
+/* ==================== KOMPONEN GLOBAL (dipakai ulang di semua modul) ==================== */
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem .9rem;border-radius:var(--r-sm);font-size:.875rem;font-weight:500;color:var(--tx);border:1px solid var(--line);background:transparent;transition:background .15s,border-color .15s,color .15s;cursor:pointer}
+.btn:hover{background:rgba(255,255,255,.05);border-color:#2A3A5E}
+.btn-primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn-primary:hover{background:#4A90FF;border-color:#4A90FF}
+.input{width:100%;background:#0B1328;border:1px solid var(--line);border-radius:var(--r-sm);padding:.7rem .9rem;color:var(--tx);outline:none;transition:border-color .15s,box-shadow .15s}
+.input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(47,125,255,.2)}
+.badge{display:inline-flex;align-items:center;gap:.35rem;padding:.15rem .55rem;border-radius:999px;font-size:.75rem;font-weight:500;background:rgba(47,125,255,.14);color:#8DB7FF}
+.badge-ok{background:rgba(16,185,129,.14);color:#6EE7B7}.badge-warn{background:rgba(245,158,11,.14);color:#FCD34D}.badge-err{background:rgba(248,113,113,.14);color:#FCA5A5}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(16,185,129,.18)}
+.dot.off{background:var(--err);box-shadow:0 0 0 3px rgba(248,113,113,.18)}
+.surface{background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+.tbl{width:100%;border-collapse:collapse;font-size:.875rem}
+.tbl th{text-align:left;font-weight:500;color:var(--mut);padding:.6rem .9rem;border-bottom:1px solid var(--line)}
+.tbl td{padding:.6rem .9rem;border-bottom:1px solid var(--line)}
+.tbl tr:hover td{background:rgba(255,255,255,.02)}
+.state{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:2.5rem;text-align:center;color:var(--mut)}
+.spinner{width:34px;height:34px;border:3px solid #1E2B48;border-top-color:var(--cyan);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ==================== LOGIN ==================== */
+#login{background:radial-gradient(55% 40% at 50% 0%,rgba(47,125,255,.26),transparent 70%),var(--bg)}
+#login-card{background:var(--card);border:1px solid var(--line);box-shadow:0 24px 60px rgba(0,0,0,.45)}
+.shake{animation:shake .4s}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+
+/* ==================== SIDEBAR ==================== */
+#sidebar{width:272px;background:var(--bar);border-right:1px solid var(--line);transition:width .25s ease,transform .25s ease;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;z-index:40}
+.nav-item{position:relative;display:flex;align-items:center;gap:.75rem;width:100%;text-align:left;padding:.55rem .75rem;border-radius:var(--r-sm);color:var(--mut);font-size:.875rem;line-height:1.25;transition:background .15s,color .15s}
+.nav-item:hover{background:rgba(255,255,255,.05);color:var(--tx)}
+.nav-item.active{background:rgba(47,125,255,.14);color:#fff}
+.nav-item.active::before{content:"";position:absolute;left:-12px;top:20%;bottom:20%;width:3px;border-radius:0 3px 3px 0;background:linear-gradient(var(--cyan),var(--blue))}
+.nav-item svg{transition:transform .15s}.nav-item:hover svg{transform:scale(1.08)}
+.grp-btn{color:var(--tx);font-weight:600}
+.chev{transition:transform .2s;margin-left:auto;color:var(--dim)}
+.open-g .chev{transform:rotate(90deg)}
+.sub{display:grid;grid-template-rows:0fr;transition:grid-template-rows .25s ease}
+.sub.open{grid-template-rows:1fr}.sub>div{overflow:hidden}
+/* Mode collapsed (rail ikon) */
+#sidebar.rail{width:72px}
+#sidebar.rail .lbl,#sidebar.rail .grp-btn,#sidebar.rail .brand-text,#sidebar.rail .fox-text{display:none}
+#sidebar.rail .sub{grid-template-rows:1fr}
+#sidebar.rail .sub>div{margin-left:0;padding-left:0;border:0}
+#sidebar.rail .nav-item{justify-content:center;padding:.7rem 0}
+#sidebar.rail .nav-item.active::before{left:-12px}
+#sidebar.rail .grp{border-top:1px solid var(--line);padding-top:.5rem;margin-top:.5rem}
+#sidebar.rail .grp:first-child{border:0;margin:0;padding:0}
+#sidebar.rail .brand{justify-content:center;padding-inline:0}
+#sidebar.rail .fox{justify-content:center}
+#backdrop{display:none}
+@media (max-width:1023px){
+  #sidebar,#sidebar.rail{position:fixed;inset:0 auto 0 0;width:280px;transform:translateX(-100%)}
+  #sidebar.rail .lbl,#sidebar.rail .grp-btn,#sidebar.rail .brand-text,#sidebar.rail .fox-text{display:revert}
+  #sidebar.rail .nav-item{justify-content:flex-start;padding:.55rem .75rem}
+  #sidebar.rail .sub>div{margin-left:1.25rem;padding-left:1rem}
+  #sidebar.drawer{transform:none;box-shadow:20px 0 60px rgba(0,0,0,.5)}
+  #backdrop.show{display:block;position:fixed;inset:0;background:rgba(3,7,18,.6);z-index:30}
+}
+
+/* ==================== HERO & KARTU ==================== */
+.hero{position:relative;overflow:hidden;border-radius:var(--r);border:1px solid var(--line);min-height:210px;background:#0B1630 center/cover no-repeat}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,13,28,.96) 0%,rgba(7,13,28,.82) 42%,rgba(7,13,28,.25) 100%)}
+.hero-art{position:absolute;right:0;top:0;height:100%;width:62%;opacity:.95}
+.hero-body{position:relative;z-index:2;padding:2.25rem 2.5rem;max-width:560px}
+.mod{position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;gap:1.25rem;min-height:168px;padding:1.15rem;text-align:left;background:var(--card) center/cover no-repeat;border:1px solid var(--line);border-radius:var(--r);transition:transform .2s,border-color .2s,background-color .2s}
+.mod::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(16,26,48,.78),rgba(16,26,48,.97))}
+.mod>*{position:relative;z-index:1}
+.mod:hover{transform:translateY(-3px);border-color:rgba(34,211,238,.5);background-color:var(--card-hi)}
+.mod .wm{position:absolute;z-index:0;right:-18px;top:-14px;opacity:.07;color:var(--cyan)}
+.mod .wm svg{width:120px;height:120px;stroke-width:1.2}
+.ico{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:rgba(34,211,238,.1);color:var(--cyan);border:1px solid rgba(34,211,238,.18)}
+.go{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);color:var(--mut);transition:background .2s,color .2s,transform .2s}
+.mod:hover .go{background:var(--blue);border-color:var(--blue);color:#fff;transform:translateX(3px)}
+.clamp2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rise{animation:rise .45s ease both;animation-delay:calc(var(--i,0)*70ms)}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:640px){.hero-body{padding:1.5rem}.hero-art{opacity:.35;width:100%}}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<section id="login" class="h-full w-full flex items-center justify-center p-4">
+  <div id="login-card" class="rounded-2xl w-full max-w-[400px] p-8">
+    <div class="flex flex-col items-center text-center">
+      <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-bold text-white" style="background:linear-gradient(135deg,var(--blue),var(--cyan))">M</div>
+      <h1 class="mt-5 text-2xl font-semibold">Selamat datang kembali</h1>
+      <p class="mt-1 text-sm" style="color:var(--mut)">Masuk ke Mulya System Monitoring</p>
+    </div>
+    <form id="login-form" class="mt-7 space-y-4" autocomplete="off">
+      <div>
+        <label for="username" class="block text-sm mb-1.5" style="color:#B6C2DA">Username</label>
+        <input id="username" class="input" type="text" placeholder="Masukkan username" required autofocus>
+      </div>
+      <div>
+        <label for="password" class="block text-sm mb-1.5" style="color:#B6C2DA">Password</label>
+        <div class="relative">
+          <input id="password" class="input pr-11" type="password" placeholder="Masukkan password" required>
+          <button type="button" id="toggle-pass" class="absolute right-3 top-1/2 -translate-y-1/2" style="color:var(--mut)" aria-label="Tampilkan password">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <p id="login-error" class="hidden text-sm" style="color:var(--err)" role="alert">Username atau password salah. Periksa lalu coba lagi.</p>
+      <button type="submit" class="btn btn-primary w-full justify-center py-2.5">Masuk</button>
+    </form>
+    <p class="mt-6 text-center text-xs" style="color:var(--dim)">Powered By: Muly@.ID</p>
+  </div>
+</section>
+
+<!-- ============ APLIKASI ============ -->
+<div id="app" class="hidden h-full w-full opacity-0 transition-opacity duration-500" style="height:100dvh">
+  <div id="backdrop"></div>
+
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <div class="brand flex items-center gap-3 px-5 h-16 shrink-0" style="border-bottom:1px solid var(--line)">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white shrink-0" style="background:linear-gradient(135deg,var(--blue),var(--cyan))">M</div>
+      <div class="brand-text leading-tight min-w-0">
+        <div class="font-bold tracking-tight text-[15px]">MSM</div>
+        <div class="text-[11px] truncate" style="color:var(--mut)">Mulya System Monitoring</div>
+      </div>
+    </div>
+    <nav id="sidebar-inner" class="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-1"></nav>
+    <div class="fox flex items-center gap-3 px-5 py-4 shrink-0" style="border-top:1px solid var(--line)">
+      <svg class="w-8 h-8 shrink-0" viewBox="0 0 32 32" fill="none" stroke="var(--cyan)" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M3 4l8 6h10l8-6-2 14-11 11L5 18z"/><path d="M11 10l5 7 5-7M12 19l4 3 4-3" stroke="var(--blue)"/><circle cx="12.5" cy="15" r=".9" fill="var(--cyan)"/><circle cx="19.5" cy="15" r=".9" fill="var(--cyan)"/></svg>
+      <div class="fox-text leading-tight">
+        <div class="text-sm font-semibold">MSM</div>
+        <div class="text-[11px]" style="color:var(--mut)">Better Monitoring</div>
+        <div class="text-[11px]" style="color:var(--mut)">Better Performance</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Kolom kanan -->
+  <div class="flex flex-col min-w-0 flex-1 h-full">
+    <header class="h-16 shrink-0 flex items-center justify-between px-4 sm:px-6" style="background:var(--bar);border-bottom:1px solid var(--line)">
+      <div class="flex items-center gap-3 min-w-0">
+        <button id="btn-sidebar" class="btn !p-2" aria-label="Tampilkan atau sembunyikan sidebar">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h16"/></svg>
+        </button>
+        <span id="nav-date" class="text-sm truncate" style="color:var(--mut)"></span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="btn-home" class="btn">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></svg><span class="hidden sm:inline">Home</span>
+        </button>
+        <button id="btn-logout" class="btn" style="color:var(--mut)">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg><span class="hidden sm:inline">Keluar</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="flex-1 min-h-0 relative">
+      <!-- Home -->
+      <div id="home" class="absolute inset-0 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <div class="max-w-6xl mx-auto">
+          <section class="hero rise" id="hero">
+            <svg class="hero-art" viewBox="0 0 520 210" preserveAspectRatio="xMaxYMax slice" aria-hidden="true">
+              <g stroke="#1E3B6E" stroke-width="2" fill="none"><path d="M30 20v150M170 20v150M310 20v150M450 20v150"/><path d="M30 60h140M30 110h140M170 60h140M170 110h140M310 60h140M310 110h140M450 60h70M450 110h70"/></g>
+              <g fill="#17305C" stroke="#2F7DFF" stroke-opacity=".5"><rect x="42" y="34" width="34" height="26"/><rect x="84" y="40" width="28" height="20"/><rect x="48" y="84" width="40" height="26"/><rect x="100" y="90" width="30" height="20"/><rect x="182" y="36" width="36" height="24"/><rect x="226" y="84" width="34" height="26"/><rect x="322" y="38" width="30" height="22"/><rect x="362" y="86" width="38" height="24"/><rect x="462" y="40" width="32" height="20"/></g>
+              <rect x="0" y="170" width="520" height="40" fill="#0D1B38"/>
+              <rect x="150" y="168" width="360" height="12" rx="3" fill="#13264A" stroke="#22D3EE" stroke-opacity=".4"/>
+              <g fill="#22D3EE" fill-opacity=".6"><circle cx="170" cy="190" r="4"/><circle cx="240" cy="190" r="4"/><circle cx="310" cy="190" r="4"/><circle cx="380" cy="190" r="4"/><circle cx="450" cy="190" r="4"/></g>
+              <rect x="335" y="146" width="30" height="22" fill="#1B3B73" stroke="#2F7DFF" stroke-opacity=".6"/><rect x="410" y="150" width="26" height="18" fill="#1B3B73" stroke="#2F7DFF" stroke-opacity=".6"/>
+              <g><circle cx="262" cy="104" r="11" fill="#2A4B85"/><path d="M246 166v-40a16 16 0 0132 0v40z" fill="#22407A"/><path d="M246 130h-4M278 132l16 8" stroke="#22407A" stroke-width="8" stroke-linecap="round"/><rect x="290" y="128" width="20" height="26" rx="3" fill="#22D3EE" fill-opacity=".85" transform="rotate(14 300 140)"/></g>
+            </svg>
+            <div class="hero-body">
+              <h2 class="text-3xl sm:text-4xl font-bold tracking-tight">Halo, <span id="home-user" style="color:var(--blue)"></span></h2>
+              <p class="mt-3 text-lg font-medium">Selamat datang di Mulya System Monitoring.</p>
+              <p class="mt-1.5 text-sm" style="color:var(--mut)">Pantau dan kelola data operasional dengan lebih mudah dan efisien.</p>
+            </div>
+          </section>
+          <div id="home-cards" class="mt-9 space-y-9"></div>
+        </div>
+      </div>
+
+      <!-- Frame -->
+      <div id="frame-wrap" class="absolute inset-0 hidden flex-col">
+        <div class="h-11 shrink-0 flex items-center justify-between px-4 text-sm" style="background:var(--bar);border-bottom:1px solid var(--line)">
+          <span id="frame-title" class="font-medium truncate"></span>
+          <a id="frame-ext" href="#" target="_blank" rel="noopener" class="flex items-center gap-1.5 shrink-0 ml-3" style="color:var(--cyan)">
+            <span class="hidden sm:inline">Buka di tab baru</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/></svg>
+          </a>
+        </div>
+        <div class="relative flex-1 min-h-0">
+          <div id="loader" class="absolute inset-0 hidden flex-col items-center justify-center gap-4 z-10" style="background:var(--bg)">
+            <div class="spinner"></div>
+            <p class="text-sm" style="color:var(--mut)">Memuat modul...</p>
+            <p id="slow-hint" class="hidden text-xs max-w-xs text-center" style="color:var(--dim)">Pemuatan lebih lama dari biasanya. Jika layar tetap kosong, pakai "Buka di tab baru".</p>
+          </div>
+          <iframe id="frame" title="Konten modul" class="w-full h-full border-0 bg-white" style="width:100%;height:100%" allow="clipboard-read; clipboard-write; camera; microphone; fullscreen"></iframe>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative h-10 shrink-0 flex items-center justify-between px-4 sm:px-6 text-xs overflow-hidden" style="background:var(--bar);border-top:1px solid var(--line);color:var(--mut)">
+      <div class="flex items-center gap-2.5">
+        <span id="sys-dot" class="dot"></span><span id="sys-text" class="font-medium" style="color:var(--tx)">Sistem Online</span>
+        <span class="hidden sm:inline" style="color:var(--dim)">|</span><span id="ver" class="hidden sm:inline"></span>
+      </div>
+      <div class="relative z-10 pr-10">Powered By: <span style="color:var(--tx);font-weight:500">Muly@.ID</span></div>
+      <svg class="absolute right-0 bottom-0 h-full w-14" viewBox="0 0 56 40" preserveAspectRatio="none" aria-hidden="true"><g stroke="var(--blue)" stroke-width="2"><path d="M56 6L22 40" opacity=".9"/><path d="M56 16L32 40" opacity=".6"/><path d="M56 26L42 40" opacity=".35"/></g></svg>
+    </footer>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   KONFIGURASI - ubah di bagian ini saja
+   ===================================================================== */
+const CONFIG = {
+  username: 'admin',         // <-- ganti username
+  password: 'mulya2026',     // <-- ganti password
+  displayName: 'Admin',      // nama di hero Home
+  version: '1.0.0',          // versi yang tampil di footer
+  heroImage: '',             // opsional: 'assets/warehouse.jpg' (foto asli menimpa ilustrasi SVG)
+  sessionKey: 'msm_session'
+};
+
+/* Menu & modul. Tambah kategori/modul = tambah objek di sini.
+   desc  : deskripsi singkat di kartu
+   image : opsional, path gambar latar kartu (mis. 'assets/packing.jpg') */
+const MENU = [
+  { id: 'controlling', label: 'Controlling', icon: 'chart', desc: 'Akses cepat ke modul utama monitoring.', children: [
+    { id: 'packing-material', label: 'Packing Material', icon: 'box', desc: 'Monitoring ketersediaan packing material.', image: '',
+      url: 'https://script.google.com/macros/s/AKfycbyl8LZTJ1ZzAP4CGqW5kdMkmjIbiTp8y8t2FJv0JHADh0MakQHqwilBCidNqWinCnMz/exec' },
+    { id: 'scan-packer', label: 'Scan dan Produktivitas Packer', icon: 'scan', desc: 'Pantau produktivitas packer secara operasional.', image: '',
+      url: 'https://script.google.com/macros/s/AKfycbxnF6tnFDmvEwFehcVhD4_tGAOv2rM4zR-MC4IpGLn6rKBqrOMbIZQhc8NoCfVEUmUDBQ/exec' },
+    { id: 'forecast-sku', label: 'Forcasting Tren By SKU', icon: 'trend', desc: 'Analisis tren dan kebutuhan barang berdasarkan SKU.', image: '',
+      url: 'https://script.google.com/macros/s/AKfycbwGDjIknTSQqtOkeEVJECFMrlMjqi36R09U9BrGk_F5u7BwK7VOLj1NT0jau7K5U7ZR/exec' }
+  ]},
+  { id: 'lainnya', label: 'Lain nya', icon: 'grid', desc: 'Fitur pendukung operasional.', children: [
+    { id: 'cerekan-cutter', label: 'Cerekan dan Cutter', icon: 'cut', desc: 'Monitoring data rekan kerja dan cutter.', image: '',
+      url: 'https://mulyadhialawihisyam-design.github.io/Asset-Packer' },
+    { id: 'cek-lembur', label: 'Cek Data Lembur', icon: 'clock', desc: 'Monitoring data lembur karyawan.', image: '',
+      url: 'https://mulyadhialawihisyam-design.github.io/LemburHUb/' }
+  ]}
+];
+
+const svg = p => `<svg class="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">${p}</svg>`;
+const ICONS = {
+  chart: svg('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'),
+  box:   svg('<path d="M21 8l-9-5-9 5v8l9 5 9-5V8zM3 8l9 5 9-5M12 13v8"/>'),
+  scan:  svg('<path d="M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M7 12h10"/>'),
+  trend: svg('<path d="M3 17l6-6 4 4 8-8M15 7h6v6"/>'),
+  grid:  svg('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
+  cut:   svg('<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/>'),
+  clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  arrow: svg('<path d="M5 12h14M13 6l6 6-6 6"/>')
+};
+const CHEV = '<svg class="chev w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>';
+
+/* =====================================================================
+   LOGIKA APLIKASI (login, logout, routing iframe tetap sama)
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+let activeId = null, slowTimer = null;
+const isMobile = () => window.matchMedia('(max-width:1023px)').matches;
+
+function safeSession(action, val) {
+  try { return action === 'get' ? sessionStorage.getItem(CONFIG.sessionKey)
+        : action === 'set' ? sessionStorage.setItem(CONFIG.sessionKey, val)
+        : sessionStorage.removeItem(CONFIG.sessionKey); } catch (e) { return null; }
+}
+
+$('login-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const u = $('username').value.trim(), p = $('password').value;
+  if (u === CONFIG.username && p === CONFIG.password) { safeSession('set', '1'); showApp(); }
+  else {
+    const card = $('login-card');
+    $('login-error').classList.remove('hidden');
+    card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+    $('password').value = ''; $('password').focus();
+  }
+});
+$('toggle-pass').addEventListener('click', () => { const i = $('password'); i.type = i.type === 'password' ? 'text' : 'password'; });
+
+function revealApp() {
+  const app = $('app');
+  app.classList.remove('hidden'); app.classList.add('flex');
+  requestAnimationFrame(() => app.classList.remove('opacity-0'));
+}
+function showApp() {
+  const login = $('login');
+  login.style.transition = 'opacity .4s'; login.style.opacity = '0';
+  setTimeout(() => { login.classList.add('hidden'); revealApp(); goHome(); }, 400);
+}
+function logout() {
+  safeSession('del');
+  $('frame').src = 'about:blank'; activeId = null;
+  closeDrawer();
+  const app = $('app'), login = $('login');
+  app.classList.add('hidden', 'opacity-0'); app.classList.remove('flex');
+  login.classList.remove('hidden'); login.style.opacity = '1';
+  $('password').value = ''; $('login-error').classList.add('hidden'); $('username').focus();
+}
+
+/* --- Sidebar --- */
+function buildSidebar() {
+  const nav = $('sidebar-inner');
+  nav.innerHTML = MENU.map((g, i) => `
+    <div class="grp group-wrap ${i === 0 ? 'open-g' : ''}" data-group="${g.id}">
+      <button class="nav-item grp-btn" data-toggle="${g.id}" aria-expanded="${i === 0}">
+        ${ICONS[g.icon] || ''}<span class="lbl">${g.label}</span>${CHEV}
+      </button>
+      <div class="sub ${i === 0 ? 'open' : ''}"><div class="ml-5 pl-4 mt-1 space-y-0.5" style="border-left:1px solid var(--line)">
+        ${g.children.map(c => `<button class="nav-item" data-menu="${c.id}" title="${c.label}">${ICONS[c.icon] || ''}<span class="lbl">${c.label}</span></button>`).join('')}
+      </div></div>
+    </div>`).join('');
+  nav.addEventListener('click', e => {
+    const t = e.target.closest('[data-toggle]'), m = e.target.closest('[data-menu]');
+    if (t) toggleGroup(t.dataset.toggle);
+    if (m) openMenu(m.dataset.menu);
+  });
+}
+function toggleGroup(id, forceOpen) {
+  const wrap = document.querySelector(`[data-group="${id}"]`);
+  const open = forceOpen ?? !wrap.classList.contains('open-g');
+  wrap.classList.toggle('open-g', open);
+  wrap.querySelector('.sub').classList.toggle('open', open);
+  wrap.querySelector('[data-toggle]').setAttribute('aria-expanded', open);
+}
+function toggleSidebar() {
+  if (isMobile()) { const o = $('sidebar').classList.toggle('drawer'); $('backdrop').classList.toggle('show', o); }
+  else $('sidebar').classList.toggle('rail');
+}
+function closeDrawer() { $('sidebar').classList.remove('drawer'); $('backdrop').classList.remove('show'); }
+
+function findItem(id) {
+  for (const g of MENU) { const c = g.children.find(x => x.id === id); if (c) return { g, c }; }
+  return null;
+}
+
+/* --- Navigasi konten --- */
+function openMenu(id) {
+  const found = findItem(id); if (!found) return;
+  const { g, c } = found;
+  activeId = id;
+  toggleGroup(g.id, true);
+  document.querySelectorAll('[data-menu]').forEach(b => b.classList.toggle('active', b.dataset.menu === id));
+  if (isMobile()) closeDrawer();
+
+  $('home').classList.add('hidden');
+  const wrap = $('frame-wrap'); wrap.classList.remove('hidden'); wrap.classList.add('flex');
+  $('frame-title').textContent = `${g.label} / ${c.label}`;
+  $('frame-ext').href = c.url;
+
+  const loader = $('loader'), frame = $('frame');
+  loader.classList.remove('hidden'); loader.classList.add('flex');
+  $('slow-hint').classList.add('hidden');
+  clearTimeout(slowTimer);
+  slowTimer = setTimeout(() => $('slow-hint').classList.remove('hidden'), 12000);
+  frame.onload = () => {
+    if (frame.src === 'about:blank' || !activeId) return;
+    clearTimeout(slowTimer); loader.classList.add('hidden'); loader.classList.remove('flex');
+  };
+  frame.src = c.url;
+  try { history.replaceState(null, '', '#' + id); } catch (e) {}
+}
+
+function goHome() {
+  activeId = null; clearTimeout(slowTimer);
+  $('frame').src = 'about:blank';
+  $('frame-wrap').classList.add('hidden'); $('frame-wrap').classList.remove('flex');
+  $('home').classList.remove('hidden');
+  document.querySelectorAll('[data-menu]').forEach(b => b.classList.remove('active'));
+  $('home-user').textContent = CONFIG.displayName;
+  if (isMobile()) closeDrawer();
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+}
+
+function buildHome() {
+  if (CONFIG.heroImage) $('hero').style.backgroundImage = `url("${CONFIG.heroImage}")`;
+  let n = 1;
+  $('home-cards').innerHTML = MENU.map(g => `
+    <section class="rise" style="--i:${n++}">
+      <div class="flex items-center gap-3 pb-3 mb-4" style="border-bottom:1px solid var(--line)">
+        <span class="ico !w-9 !h-9">${ICONS[g.icon] || ''}</span>
+        <div><h3 class="font-semibold leading-tight">${g.label}</h3><p class="text-sm" style="color:var(--mut)">${g.desc || ''}</p></div>
+      </div>
+      <div class="grid gap-4" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">
+        ${g.children.map(c => `
+          <button class="mod" data-card="${c.id}" ${c.image ? `style="background-image:url('${c.image}')"` : ''}>
+            <span class="wm">${ICONS[c.icon] || ''}</span>
+            <span class="ico">${ICONS[c.icon] || ''}</span>
+            <span class="flex items-end justify-between gap-3">
+              <span><span class="block font-semibold leading-snug">${c.label}</span>
+              <span class="block mt-1 text-sm clamp2" style="color:var(--mut)">${c.desc || ''}</span></span>
+              <span class="go shrink-0">${ICONS.arrow}</span>
+            </span>
+          </button>`).join('')}
+      </div>
+    </section>`).join('');
+  $('home-cards').addEventListener('click', e => { const b = e.target.closest('[data-card]'); if (b) openMenu(b.dataset.card); });
+}
+
+/* --- Footer: status koneksi browser (bukan status server modul) --- */
+function updateStatus() {
+  const on = navigator.onLine;
+  $('sys-dot').classList.toggle('off', !on);
+  $('sys-text').textContent = on ? 'Sistem Online' : 'Tidak Ada Koneksi';
+}
+function updateDate() {
+  $('nav-date').textContent = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+/* --- Inisialisasi --- */
+$('btn-home').addEventListener('click', goHome);
+$('btn-logout').addEventListener('click', logout);
+$('btn-sidebar').addEventListener('click', toggleSidebar);
+$('backdrop').addEventListener('click', closeDrawer);
+window.addEventListener('online', updateStatus);
+window.addEventListener('offline', updateStatus);
+window.addEventListener('resize', () => { if (!isMobile()) closeDrawer(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+$('ver').textContent = 'MSM v' + CONFIG.version;
+buildSidebar(); buildHome(); updateStatus(); updateDate();
+
+if (safeSession('get') === '1') {
+  $('login').classList.add('hidden'); revealApp();
+  const hash = location.hash.slice(1);
+  goHome(); if (hash && findItem(hash)) openMenu(hash);
+}
+</script>
+</body>
+</html>
