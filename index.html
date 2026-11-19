@@ -265,6 +265,10 @@ const MENU = [
     { id: 'forecast-sku', label: 'Forcasting Tren By SKU', icon: 'trend', desc: 'Analisis tren dan kebutuhan barang berdasarkan SKU.', image: '',
       url: 'https://script.google.com/macros/s/AKfycbwGDjIknTSQqtOkeEVJECFMrlMjqi36R09U9BrGk_F5u7BwK7VOLj1NT0jau7K5U7ZR/exec' }
   ]},
+  { id: 'customer-service', label: 'Customer Service', icon: 'cs', desc: 'Pusat layanan dan penanganan kendala pelanggan.', children: [
+    { id: 'cs-command-center', label: 'CS Command Center', icon: 'command', desc: 'Monitoring terpusat aktivitas dan antrean layanan CS.', image: '',
+      url: 'https://script.google.com/macros/s/AKfycbyr_GeWknaP5GGQyVoocaunYIytOtgsy8WjAjkMcxXDWg-THeYSFKFJaMRBL-4Seuey/exec' }
+  ]},
   { id: 'lainnya', label: 'Lain nya', icon: 'grid', desc: 'Fitur pendukung operasional.', children: [
     { id: 'cerekan-cutter', label: 'Cerekan dan Cutter', icon: 'cut', desc: 'Monitoring data rekan kerja dan cutter.', image: '',
       url: 'https://mulyadhialawihisyam-design.github.io/Asset-Packer' },
@@ -282,14 +286,15 @@ const ICONS = {
   scan:    svg('<path d="M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M7 12h10"/>'),
   picker:  svg('<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>'),
   trend:   svg('<path d="M3 17l6-6 4 4 8-8M15 7h6v6"/>'),
+  cs:      svg('<path d="M3 18v-6a9 9 0 0118 0v6M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z"/>'),
+  command: svg('<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4M7 9l3 3-3 3M12 15h5"/>'),
   grid:    svg('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
   cut:     svg('<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/>'),
   clock:   svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
   receipt: svg('<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1zM8 8h8M8 12h8M8 16h5"/>'),
   arrow:   svg('<path d="M5 12h14M13 6l6 6-6 6"/>')
 };
-const CHEV = '<svg class="chev w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>';
-/* =====================================================================
+const CHEV = '<svg class="chev w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>';/* =====================================================================
    LOGIKA APLIKASI (login, logout, routing iframe tetap sama)
    ===================================================================== */
 const $ = id => document.getElementById(id);
